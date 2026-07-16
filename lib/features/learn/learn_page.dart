@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../models/learning_path_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/difficulty_badge.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/login_gate.dart';
 import '../../widgets/section_header.dart';
 
-/// Placeholder snackbar for routes not yet implemented
-void _showComingSoon(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: const Text('Coming soon!'),
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 1),
-    ),
-  );
+/// Show login gate for guest users, else navigate to path/challenge
+void _requireAuth(BuildContext context, VoidCallback action) {
+  final auth = context.read<AuthProvider>();
+  if (!auth.isLoggedIn) {
+    LoginGate.show(
+      context: context,
+      title: 'Unlock Full Learning',
+      description: 'Sign in to save progress, earn XP, and unlock achievements.',
+      benefits: ['Save lesson progress', 'Earn XP for completing lessons', 'Unlock achievements', 'Track your learning journey'],
+    );
+  } else {
+    action();
+  }
 }
 
 class LearnPage extends StatefulWidget {
@@ -58,8 +64,9 @@ class _LearnPageState extends State<LearnPage>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(
-            margin: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.page,
+            margin: EdgeInsets.only(
+              left: AppSpacing.page,
+              right: AppSpacing.page,
               bottom: AppSpacing.sm,
             ),
             decoration: BoxDecoration(
@@ -142,7 +149,7 @@ class _PathCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showComingSoon(context),
+      onTap: () => _requireAuth(context, (){}),
       child: GlassCard(
         padding: AppSpacing.cardPadding,
         borderColor: path.color.withOpacity(0.3),
@@ -452,12 +459,13 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(right: AppSpacing.sm),
-      child: GestureDetector(              onTap: () => _showComingSoon(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
+      child: GestureDetector(
+        onTap: () => _requireAuth(context, () {}),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           decoration: BoxDecoration(
             color: selected ? AppColors.primaryBg : AppColors.surface,
             borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
@@ -504,7 +512,7 @@ class _ChallengeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () => _requireAuth(context, () {}),
       child: GlassCard(
         padding: AppSpacing.cardPadding,
         borderColor: solved

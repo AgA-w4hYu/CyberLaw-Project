@@ -87,7 +87,7 @@ class ProfilePage extends StatelessWidget {
                     label: const Text('LOG OUT'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
-                      side: const BorderSide(color: AppColors.error.withOpacity(0.3)),
+                      side: BorderSide(color: AppColors.error.withOpacity(0.3)),
                     ),
                   ),
                 ),

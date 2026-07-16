@@ -14,6 +14,7 @@ import '../../features/main_shell.dart';
 import '../../features/profile/profile_page.dart';
 import '../../features/profile/settings_page.dart';
 import '../../features/profile/skill_tree_page.dart';
+import '../../features/report/report_page.dart';
 import '../../features/toolkit/toolkit_page.dart';
 import '../../providers/auth_provider.dart';
 import '../constants/app_constants.dart';
@@ -26,6 +27,7 @@ final GoRouter appRouter = GoRouter(
   redirect: (BuildContext context, GoRouterState state) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isLoggedIn = authProvider.isLoggedIn;
+    final isGuest = authProvider.isGuest;
     final path = state.matchedLocation;
 
     final isAuthRoute =
@@ -37,24 +39,28 @@ final GoRouter appRouter = GoRouter(
     final onboardingCompleted =
         onboardingBox.get('onboarding_completed', defaultValue: false) as bool;
 
-    // If onboarding completed and user is not logged in, skip to login
-    if (onboardingCompleted && !isLoggedIn && !isAuthRoute) {
-      return AppConstants.routeLogin;
+    // If onboarding completed and user is on onboarding, skip to home (as guest or logged in)
+    if (onboardingCompleted && isOnboarding) {
+      // If not logged in, enter guest mode
+      if (!isLoggedIn && !isGuest) {
+        authProvider.enterGuestMode();
+      }
+      return AppConstants.routeHome;
     }
 
-    // If onboarding completed and user is on onboarding, skip to login
-    if (onboardingCompleted && isOnboarding && !isLoggedIn) {
-      return AppConstants.routeLogin;
-    }
-
-    // If not logged in, not on auth or onboarding routes, redirect to login
-    if (!isLoggedIn && !isAuthRoute && !isOnboarding) {
-      return AppConstants.routeLogin;
-    }
-
-    // If logged in and on auth or onboarding routes, redirect to home
+    // If logged in and on auth or onboarding routes, go to home
     if (isLoggedIn && (isAuthRoute || isOnboarding)) {
       return AppConstants.routeHome;
+    }
+
+    // Guest users can access everything except auth routes
+    if (isGuest && isAuthRoute) {
+      return AppConstants.routeHome;
+    }
+
+    // If not authenticated and not guest and not on auth/onboarding, go to onboarding
+    if (!isLoggedIn && !isGuest && !isAuthRoute && !isOnboarding) {
+      return AppConstants.routeOnboarding;
     }
 
     return null;
@@ -74,44 +80,38 @@ final GoRouter appRouter = GoRouter(
       builder: (_, __) => const RegisterPage(),
     ),
 
-    // ── ShellRoute with bottom nav ──
+    // ── ShellRoute with bottom nav (6 tabs) ──
     ShellRoute(
       builder: (context, state, child) => MainShell(child: child),
       routes: [
         GoRoute(
           path: AppConstants.routeHome,
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: HomePage(),
-          ),
+          pageBuilder: (context, state) => const NoTransitionPage(child: HomePage()),
         ),
         GoRoute(
           path: AppConstants.routeLearn,
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: LearnPage(),
-          ),
+          pageBuilder: (context, state) => const NoTransitionPage(child: LearnPage()),
         ),
         GoRoute(
           path: AppConstants.routeToolkit,
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: ToolkitPage(),
-          ),
+          pageBuilder: (context, state) => const NoTransitionPage(child: ToolkitPage()),
         ),
         GoRoute(
           path: AppConstants.routeCommunity,
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: CommunityPage(),
-          ),
+          pageBuilder: (context, state) => const NoTransitionPage(child: CommunityPage()),
+        ),
+        GoRoute(
+          path: AppConstants.routeReport,
+          pageBuilder: (context, state) => const NoTransitionPage(child: ReportPage()),
         ),
         GoRoute(
           path: AppConstants.routeProfile,
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: ProfilePage(),
-          ),
+          pageBuilder: (context, state) => const NoTransitionPage(child: ProfilePage()),
         ),
       ],
     ),
 
-    // ── Full-screen routes (outside shell) ──
+    // ── Full-screen routes ──
     GoRoute(
       path: AppConstants.routeLeaderboard,
       builder: (_, __) => const LeaderboardPage(),

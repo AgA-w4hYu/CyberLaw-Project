@@ -292,7 +292,6 @@ class _MentorPickCard extends StatelessWidget {
         padding: AppSpacing.cardPaddingCompact,
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: AppSpacing.borderRadiusMd,
           border: Border(
             top: BorderSide(color: AppColors.secondary, width: 2),
             left: BorderSide(color: AppColors.borderSoft),
