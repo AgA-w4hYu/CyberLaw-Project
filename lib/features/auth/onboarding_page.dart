@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 
 import '../../core/constants/app_constants.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -18,48 +20,45 @@ class _OnboardingPageState extends State<OnboardingPage> {
   int _currentPage = 0;
 
   final _pages = const [
-    _OnboardingData(
+    _OnboardData(
       icon: Icons.shield_outlined,
-      color: AppTheme.primary,
-      title: 'Selamat Datang di\nCyberLaw Guardian',
-      body: 'Platform belajar keamanan siber yang dirancang untuk membantu Anda memahami dan menghadapi ancaman digital.',
+      color: AppColors.primary,
+      title: 'Welcome to\nCyberLaw',
+      subtitle: 'Your personal cybersecurity academy. Learn, practice, and master the art of ethical hacking.',
     ),
-    _OnboardingData(
-      icon: Icons.build_circle_outlined,
-      color: AppTheme.secondary,
-      title: 'Alat Keamanan\nEdukatif',
-      body: 'Gunakan tool seperti Password Checker, Phishing Checker, dan Hash Generator untuk belajar melindungi diri Anda secara offline di perangkat ini.',
+    _OnboardData(
+      icon: Icons.menu_book,
+      color: AppColors.secondary,
+      title: 'Structured\nLearning Paths',
+      subtitle: 'Follow curated paths from beginner to advanced. Network security, cryptography, web security, and more.',
     ),
-    _OnboardingData(
-      icon: Icons.science_outlined,
-      color: const Color(0xFFAB00FF),
-      title: 'CTF Challenge\n& Komunitas',
-      body: 'Uji keahlian Anda dengan tantangan Capture The Flag dan bergabung dengan komunitas white-hat Indonesia.',
+    _OnboardData(
+      icon: Icons.flag_outlined,
+      color: AppColors.warning,
+      title: 'CTF Challenges\n& Cyber Tools',
+      subtitle: 'Test your skills with Capture The Flag challenges and use our toolkit for real-world practice.',
     ),
-    _OnboardingData(
-      icon: Icons.gavel_outlined,
-      color: AppTheme.accent,
-      title: 'Hukum Siber\nIndonesia',
-      body: 'Pahami UU ITE, UU PDP, dan batasan legal aktivitas keamanan siber di Indonesia.',
+    _OnboardData(
+      icon: Icons.forum,
+      color: AppColors.success,
+      title: 'Join the\nCommunity',
+      subtitle: 'Connect with fellow cybersecurity enthusiasts. Share knowledge, find teams, and grow together.',
     ),
   ];
 
-  Future<void> _complete() async {
-    final box = await Hive.openBox(AppConstants.hiveBoxOnboarding);
-    await box.put('onboarding_completed', true);
-    if (mounted) {
-      Navigator.of(context).pop(true);
-    }
-  }
-
-  void _next() {
+  Future<void> _next() async {
     if (_currentPage < _pages.length - 1) {
       _pageCtrl.nextPage(
         duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
+        curve: Curves.easeInOutCubic,
       );
     } else {
-      _complete();
+      // Save onboarding completion
+      final box = await Hive.openBox(AppConstants.hiveBoxOnboarding);
+      await box.put('onboarding_completed', true);
+      if (mounted) {
+        context.go('/login');
+      }
     }
   }
 
@@ -74,10 +73,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topCenter,
-            radius: 1.5,
-            colors: [Color(0xFF0D2137), AppTheme.background],
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF0F172A),
+              AppColors.bgPrimary,
+              AppColors.bgSecondary,
+            ],
           ),
         ),
         child: SafeArea(
@@ -87,12 +90,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
               Align(
                 alignment: Alignment.topRight,
                 child: TextButton(
-                  onPressed: _complete,
-                  child: const Text(
-                    'Lewati',
-                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                  onPressed: () async {
+                    final box = await Hive.openBox(AppConstants.hiveBoxOnboarding);
+                    await box.put('onboarding_completed', true);
+                    if (context.mounted) context.go('/login');
+                  },
+                  child: Text(
+                    'Skip',
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
                   ),
-                ),
+                ).animate().fadeIn(delay: 200.ms),
               ),
 
               // Page view
@@ -104,43 +113,69 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   itemBuilder: (_, i) {
                     final p = _pages[i];
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.section,
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          // Icon container
                           Container(
-                            width: 100,
-                            height: 100,
+                            width: 120,
+                            height: 120,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: p.color.withOpacity(0.12),
-                              border: Border.all(color: p.color.withOpacity(0.4)),
-                              boxShadow: AppTheme.neonGlow(p.color, spread: 2),
+                              gradient: LinearGradient(
+                                colors: [
+                                  p.color.withOpacity(0.15),
+                                  p.color.withOpacity(0.05),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              border: Border.all(
+                                color: p.color.withOpacity(0.3),
+                                width: 1,
+                              ),
                             ),
-                            child: Icon(p.icon, color: p.color, size: 48),
-                          ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
-                          const SizedBox(height: 40),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              p.icon,
+                              color: p.color,
+                              size: 56,
+                            ),
+                          ).animate().scale(
+                                duration: 600.ms,
+                                curve: Curves.easeOutBack,
+                              ),
+
+                          const SizedBox(height: AppSpacing.section),
+
                           Text(
                             p.title,
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.orbitron(
-                              color: AppTheme.textPrimary,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
+                            style: AppTypography.h2.copyWith(
+                              color: AppColors.textPrimary,
                               height: 1.3,
                             ),
-                          ).animate().fadeIn(delay: 200.ms),
-                          const SizedBox(height: 16),
+                          ).animate().fadeIn(
+                                delay: 200.ms,
+                                duration: 400.ms,
+                              ),
+
+                          const SizedBox(height: AppSpacing.lg),
+
                           Text(
-                            p.body,
+                            p.subtitle,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 14,
+                            style: AppTypography.body.copyWith(
+                              color: AppColors.textSecondary,
                               height: 1.6,
                             ),
-                          ).animate().fadeIn(delay: 300.ms),
+                          ).animate().fadeIn(
+                                delay: 300.ms,
+                                duration: 400.ms,
+                              ),
                         ],
                       ),
                     );
@@ -150,7 +185,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
               // Dots + next button
               Padding(
-                padding: const EdgeInsets.fromLTRB(32, 0, 32, 40),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.section,
+                  0,
+                  AppSpacing.section,
+                  AppSpacing.section,
+                ),
                 child: Row(
                   children: [
                     // Page indicators
@@ -163,10 +203,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           width: isActive ? 28 : 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: isActive ? _pages[i].color : AppTheme.border,
+                            color: isActive
+                                ? _pages[i].color
+                                : AppColors.border,
                             borderRadius: BorderRadius.circular(4),
                             boxShadow: isActive
-                                ? [BoxShadow(color: _pages[i].color.withOpacity(0.4), blurRadius: 8)]
+                                ? [
+                                    BoxShadow(
+                                      color: _pages[i].color.withOpacity(0.4),
+                                      blurRadius: 8,
+                                    )
+                                  ]
                                 : null,
                           ),
                         );
@@ -177,30 +224,46 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     GestureDetector(
                       onTap: _next,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xxl,
+                          vertical: AppSpacing.md,
+                        ),
                         decoration: BoxDecoration(
-                          color: _pages[_currentPage].color,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: AppTheme.neonGlow(_pages[_currentPage].color, spread: 2),
+                          gradient: LinearGradient(
+                            colors: [
+                              _pages[_currentPage].color,
+                              _pages[_currentPage].color.withOpacity(0.8),
+                            ],
+                          ),
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.radiusMd),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _pages[_currentPage].color
+                                  .withOpacity(0.3),
+                              blurRadius: 16,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              _currentPage == _pages.length - 1 ? 'MULAI' : 'LANJUT',
-                              style: GoogleFonts.orbitron(
-                                color: AppTheme.background,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 2,
+                              _currentPage == _pages.length - 1
+                                  ? 'GET STARTED'
+                                  : 'NEXT',
+                              style: AppTypography.button.copyWith(
+                                color: AppColors.textInverse,
+                                letterSpacing: 1,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.sm),
                             Icon(
                               _currentPage == _pages.length - 1
-                                  ? Icons.check_circle_outline
+                                  ? Icons.arrow_forward
                                   : Icons.arrow_forward,
-                              color: AppTheme.background,
+                              color: AppColors.textInverse,
                               size: 18,
                             ),
                           ],
@@ -218,15 +281,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 }
 
-class _OnboardingData {
+class _OnboardData {
   final IconData icon;
   final Color color;
   final String title;
-  final String body;
-  const _OnboardingData({
+  final String subtitle;
+
+  const _OnboardData({
     required this.icon,
     required this.color,
     required this.title,
-    required this.body,
+    required this.subtitle,
   });
 }

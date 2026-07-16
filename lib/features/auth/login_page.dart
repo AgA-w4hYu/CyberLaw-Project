@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_constants.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/cyber_text_field.dart';
-import '../../widgets/neon_button.dart';
-import 'onboarding_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,31 +16,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
-  final _passCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController(text: 'demo@cyberlaw.id');
+  final _passCtrl = TextEditingController(text: 'password123');
   bool _showPass = false;
-  bool _onboardingChecked = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkOnboarding();
-  }
-
-  Future<void> _checkOnboarding() async {
-    final box = await Hive.openBox(AppConstants.hiveBoxOnboarding);
-    final completed = box.get('onboarding_completed', defaultValue: false) as bool;
-    if (!completed && mounted) {
-      final result = await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const OnboardingPage()),
-      );
-      // After onboarding, force rebuild so login form is visible
-      if (mounted) setState(() => _onboardingChecked = true);
-    } else if (mounted) {
-      setState(() => _onboardingChecked = true);
-    }
-  }
 
   @override
   void dispose() {
@@ -54,20 +28,29 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+    final email = _emailCtrl.text.trim();
+    final password = _passCtrl.text;
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Please fill in all fields');
+      return;
+    }
     final auth = context.read<AuthProvider>();
-    final success = await auth.login(_emailCtrl.text.trim(), _passCtrl.text);
+    final success = await auth.login(email, password);
     if (!mounted) return;
     if (success) {
-      context.go(AppConstants.routeHome);
+      context.go('/home');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(auth.errorMessage ?? 'Login gagal'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
+      _showError(auth.errorMessage ?? 'Login failed');
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+      ),
+    );
   }
 
   @override
@@ -75,181 +58,304 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topCenter,
-            radius: 1.5,
-            colors: [Color(0xFF0D2137), AppTheme.background],
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF0F172A),
+              AppColors.bgPrimary,
+              AppColors.bgSecondary,
+            ],
           ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.page,
+              vertical: AppSpacing.section,
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Logo / Header
+                // Logo
+                const SizedBox(height: AppSpacing.section),
                 Center(
                   child: Column(
                     children: [
                       Container(
-                        width: 80,
-                        height: 80,
+                        width: 72,
+                        height: 72,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [AppTheme.primary, AppTheme.secondary],
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primary.withOpacity(0.2),
+                              AppColors.primary.withOpacity(0.05),
+                            ],
                           ),
-                          boxShadow: AppTheme.neonGlow(AppTheme.primary),
+                          border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3),
+                            width: 1,
+                          ),
                         ),
-                        child: const Icon(Icons.shield_outlined, color: AppTheme.background, size: 44),
-                      ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
-                      const SizedBox(height: 20),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.shield_outlined,
+                          color: AppColors.primary,
+                          size: 36,
+                        ),
+                      ).animate().scale(
+                            duration: 600.ms,
+                            curve: Curves.easeOutBack,
+                          ),
+                      const SizedBox(height: AppSpacing.lg),
                       Text(
-                        'CYBERLAW',
-                        style: GoogleFonts.orbitron(
-                          color: AppTheme.primary,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 4,
+                        'CyberLaw',
+                        style: AppTypography.h2.copyWith(
+                          color: AppColors.textPrimary,
                         ),
                       ).animate().fadeIn(delay: 200.ms),
-                      Text(
-                        'GUARDIAN',
-                        style: GoogleFonts.orbitron(
-                          color: AppTheme.secondary,
-                          fontSize: 16,
-                          letterSpacing: 6,
-                        ),
-                      ).animate().fadeIn(delay: 300.ms),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
                         'Cybersecurity Learning Platform',
-                        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                      ).animate().fadeIn(delay: 400.ms),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 48),
-
-                // Form
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      CyberTextField(
-                        label: 'Email',
-                        hint: 'demo@cyberlaw.id',
-                        controller: _emailCtrl,
-                        keyboardType: TextInputType.emailAddress,
-                        prefixIcon: const Icon(Icons.alternate_email, color: AppTheme.textSecondary, size: 20),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Email wajib diisi';
-                          if (!v.contains('@')) return 'Format email tidak valid';
-                          return null;
-                        },
-                      ).animate().slideY(begin: 0.3, delay: 500.ms, duration: 400.ms, curve: Curves.easeOut),
-                      const SizedBox(height: 16),
-                      CyberTextField(
-                        label: 'Password',
-                        controller: _passCtrl,
-                        obscureText: !_showPass,
-                        prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary, size: 20),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _showPass ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                            color: AppTheme.textSecondary,
-                            size: 20,
-                          ),
-                          onPressed: () => setState(() => _showPass = !_showPass),
+                        style: AppTypography.bodySm.copyWith(
+                          color: AppColors.textSecondary,
                         ),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Password wajib diisi';
-                          if (v.length < 6) return 'Password minimal 6 karakter';
-                          return null;
-                        },
-                      ).animate().slideY(begin: 0.3, delay: 600.ms, duration: 400.ms, curve: Curves.easeOut),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {},
-                          child: const Text('Lupa Password?', style: TextStyle(color: AppTheme.primary, fontSize: 13)),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Consumer<AuthProvider>(
-                        builder: (_, auth, __) => NeonButton(
-                          label: 'MASUK',
-                          width: double.infinity,
-                          isLoading: auth.status == AuthStatus.loading,
-                          onPressed: _login,
-                        ),
-                      ).animate().fadeIn(delay: 700.ms),
+                      ).animate().fadeIn(delay: 300.ms),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.section + 16),
+
+                // Login form
+                _InputField(
+                  label: 'Email',
+                  hint: 'demo@cyberlaw.id',
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icons.alternate_email,
+                ).animate().slideY(
+                      begin: 0.3,
+                      delay: 400.ms,
+                      duration: 400.ms,
+                      curve: Curves.easeOut,
+                    ),
+                const SizedBox(height: AppSpacing.lg),
+
+                _InputField(
+                  label: 'Password',
+                  controller: _passCtrl,
+                  obscureText: !_showPass,
+                  prefixIcon: Icons.lock_outline,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _showPass
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: AppColors.textTertiary,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _showPass = !_showPass),
+                  ),
+                ).animate().slideY(
+                      begin: 0.3,
+                      delay: 500.ms,
+                      duration: 400.ms,
+                      curve: Curves.easeOut,
+                    ),
+
+                const SizedBox(height: AppSpacing.xxl),
+
+                // Login button
+                Consumer<AuthProvider>(
+                  builder: (_, auth, __) => SizedBox(
+                    width: double.infinity,
+                    height: AppSpacing.buttonHeight,
+                    child: ElevatedButton(
+                      onPressed: auth.status == AuthStatus.loading
+                          ? null
+                          : _login,
+                      child: auth.status == AuthStatus.loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.textInverse,
+                              ),
+                            )
+                          : Text(
+                              'LOG IN',
+                              style: AppTypography.button.copyWith(
+                                color: AppColors.textInverse,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 600.ms),
+
+                const SizedBox(height: AppSpacing.xxl),
+
                 // Divider
                 Row(
                   children: [
-                    const Expanded(child: Divider(color: AppTheme.border)),
+                    const Expanded(child: Divider()),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('atau', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      child: Text(
+                        'or continue as guest',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
                     ),
-                    const Expanded(child: Divider(color: AppTheme.border)),
+                    const Expanded(child: Divider()),
                   ],
                 ),
-                const SizedBox(height: 24),
 
-                // Security note
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.border),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline, color: AppTheme.primary, size: 18),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Semua data disimpan lokal di perangkat Anda. Tidak ada data yang dikirim ke server.',
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                        ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Demo account hint
+                GestureDetector(
+                  onTap: () {
+                    _emailCtrl.text = 'demo@cyberlaw.id';
+                    _passCtrl.text = 'password123';
+                  },
+                  child: Container(
+                    padding: AppSpacing.cardPadding,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBg,
+                      borderRadius: AppSpacing.borderRadiusSm,
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.2),
+                        width: 0.5,
                       ),
-                    ],
-                  ),
-                ).animate().fadeIn(delay: 800.ms),
-
-                const SizedBox(height: 32),
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('Belum punya akun? ', style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
-                      GestureDetector(
-                        onTap: () => context.push(AppConstants.routeRegister),
-                        child: Text(
-                          'Daftar Sekarang',
-                          style: TextStyle(
-                            color: AppTheme.secondary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: AppColors.primary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            'Tap here to use demo account:\ndemo@cyberlaw.id / password123',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ).animate().fadeIn(delay: 900.ms),
+                ).animate().fadeIn(delay: 700.ms),
+
+                const SizedBox(height: AppSpacing.xxl),
+
+                // Register link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account? ",
+                      style: AppTypography.body.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => context.push('/register'),
+                      child: Text(
+                        'Sign Up',
+                        style: AppTypography.button.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ).animate().fadeIn(delay: 800.ms),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A styled input field matching the new design system
+class _InputField extends StatelessWidget {
+  final String label;
+  final String? hint;
+  final TextEditingController controller;
+  final bool obscureText;
+  final TextInputType keyboardType;
+  final IconData? prefixIcon;
+  final Widget? suffixIcon;
+
+  const _InputField({
+    required this.label,
+    this.hint,
+    required this.controller,
+    this.obscureText = false,
+    this.keyboardType = TextInputType.text,
+    this.prefixIcon,
+    this.suffixIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: AppTypography.label.copyWith(
+            color: AppColors.textSecondary,
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TextFormField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          style: AppTypography.body.copyWith(color: AppColors.textPrimary),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: AppTypography.body.copyWith(
+              color: AppColors.textTertiary,
+            ),
+            prefixIcon: prefixIcon != null
+                ? Icon(prefixIcon, color: AppColors.textTertiary, size: 20)
+                : null,
+            suffixIcon: suffixIcon,
+            filled: true,
+            fillColor: AppColors.surface,
+            border: OutlineInputBorder(
+              borderRadius: AppSpacing.borderRadiusSm,
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: AppSpacing.borderRadiusSm,
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: AppSpacing.borderRadiusSm,
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

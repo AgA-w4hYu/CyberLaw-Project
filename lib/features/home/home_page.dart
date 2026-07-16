@@ -1,29 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_constants.dart';
-import '../../core/theme/app_theme.dart';
-import '../../models/security_insight_model.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
+import '../../models/cyber_news_model.dart';
+import '../../models/learning_path_model.dart';
+import '../../models/tool_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/avatar_widget.dart';
+import '../../widgets/glass_card.dart';
+import '../../widgets/section_header.dart';
+import '../../widgets/streak_indicator.dart';
+import '../../widgets/xp_bar.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  final ScrollController _scrollCtrl = ScrollController();
-
-  @override
-  void dispose() {
-    _scrollCtrl.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,144 +25,93 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       body: CustomScrollView(
-        controller: _scrollCtrl,
         slivers: [
-          // ── Hero section with parallax ──
+          // ── App Bar ──
           SliverAppBar(
             pinned: true,
-            expandedHeight: 180,
-            backgroundColor: AppTheme.surface,
-            flexibleSpace: LayoutBuilder(
-              builder: (context, constraints) {
-                final expandRatio = ((constraints.maxHeight - kToolbarHeight) / (180 - kToolbarHeight)).clamp(0.0, 1.0);
-                return FlexibleSpaceBar(
-                  background: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Background parallax layer — moves slower
-                      Transform.translate(
-                        offset: Offset(0, -expandRatio * 30),
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF0D2137), AppTheme.surface],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                            ),
-                          ),
-                        ),
+            floating: false,
+            backgroundColor: AppColors.bgPrimary,
+            surfaceTintColor: Colors.transparent,
+            title: Row(
+              children: [
+                AvatarWidget(
+                  initials: user?.avatarInitials ?? '??',
+                  size: 36,
+                  showGlow: true,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Good ${_timeOfDay()}',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textSecondary,
                       ),
-                      // Decorative grid lines (parallax background)
-                      Transform.translate(
-                        offset: Offset(0, -expandRatio * 20),
-                        child: Opacity(
-                          opacity: 0.08 * expandRatio,
-                          child: CustomPaint(
-                            painter: _GridPainter(),
-                            size: Size.infinite,
-                          ),
-                        ),
+                    ),
+                    Text(
+                      user?.name ?? 'Hacker',
+                      style: AppTypography.bodyLg.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
                       ),
-                      // Foreground content — moves at normal speed
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  colors: [AppTheme.primary, AppTheme.secondary],
-                                ),
-                                boxShadow: AppTheme.neonGlow(AppTheme.primary, spread: 2),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                user?.avatarInitials ?? '??',
-                                style: GoogleFonts.orbitron(
-                                  color: AppTheme.background,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Selamat Datang,', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-                                  Text(
-                                    user?.name ?? 'Hacker',
-                                    style: GoogleFonts.orbitron(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.star, color: AppTheme.warning, size: 14),
-                                      const SizedBox(width: 4),
-                                      Text('${user?.score ?? 0} pts', style: const TextStyle(color: AppTheme.warning, fontSize: 12)),
-                                      const SizedBox(width: 12),
-                                      const Icon(Icons.leaderboard, color: AppTheme.secondary, size: 14),
-                                      const SizedBox(width: 4),
-                                      Text('Rank #${user?.rank ?? 0}', style: const TextStyle(color: AppTheme.secondary, fontSize: 12)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.logout, color: AppTheme.textSecondary),
-                              onPressed: () {
-                                context.read<AuthProvider>().logout();
-                                context.go(AppConstants.routeLogin);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  collapseMode: CollapseMode.parallax,
-                );
-              },
+                    ),
+                  ],
+                ),
+              ],
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(
+                  Icons.search,
+                  color: AppColors.textTertiary,
+                ),
+                onPressed: () {
+                  // TODO: Global search
+                },
+              ),
+              const SizedBox(width: AppSpacing.sm),
+            ],
           ),
 
           // ── Content ──
           SliverPadding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppSpacing.page),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _ThreatBanner().animate().fadeIn(delay: 100.ms),
-                const SizedBox(height: 24),
+                // XP & Streak Row
+                _XpStreakRow(user: user),
 
-                Text('MENU UTAMA', style: GoogleFonts.orbitron(color: AppTheme.textSecondary, fontSize: 11, letterSpacing: 3)),
-                const SizedBox(height: 14),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  childAspectRatio: 1.1,
-                  children: [
-                    _FeatureCard(icon: Icons.gavel, label: 'Cyber Law', subtitle: '4 Artikel', color: AppTheme.primary, onTap: () => context.push(AppConstants.routeCyberLaw), index: 0),
-                    _FeatureCard(icon: Icons.build_circle, label: 'Security Tools', subtitle: '6 Tools', color: AppTheme.secondary, onTap: () => context.push(AppConstants.routeTools), index: 1),
-                    _FeatureCard(icon: Icons.science, label: 'Cyber Lab', subtitle: 'CTF Challenges', color: const Color(0xFFAB00FF), onTap: () => context.push(AppConstants.routeCyberLab), index: 2),
-                    _FeatureCard(icon: Icons.report_problem, label: 'Laporkan', subtitle: 'Kejahatan Siber', color: AppTheme.accent, onTap: () => context.push(AppConstants.routeReport), index: 3),
-                    _FeatureCard(icon: Icons.people, label: 'Komunitas', subtitle: 'White-Hat Hub', color: AppTheme.warning, onTap: () => context.push(AppConstants.routeCommunity), index: 4),
-                    _FeatureCard(icon: Icons.leaderboard, label: 'Leaderboard', subtitle: 'Top Hackers', color: const Color(0xFF00B4D8), onTap: () => context.push(AppConstants.routeLeaderboard), index: 5),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _InsightPreviewSection(),
-                const SizedBox(height: 24),
-                _ThreatFeedSection(),
-                const SizedBox(height: 30),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // Continue Learning
+                if (user != null && user.solvedChallenges.isNotEmpty)
+                  _ContinueLearningCard()
+                else
+                  _StartLearningCard(),
+
+                const SizedBox(height: AppSpacing.xl),
+
+                // Today's Mission
+                const _TodaysMission(),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // Recent Activity
+                const _RecentActivity(),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // Recommended Tool
+                const _RecommendedTool(),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // Today's Security Tip
+                const _SecurityTip(),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // Latest Cyber News
+                const _CyberNews(),
+                const SizedBox(height: AppSpacing.section),
               ]),
             ),
           ),
@@ -176,291 +119,553 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-}
 
-// ── Grid painter for background parallax effect ──
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppTheme.primary
-      ..strokeWidth = 0.5;
-
-    for (double x = 0; x < size.width; x += 40) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += 40) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
+  String _timeOfDay() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Morning';
+    if (hour < 17) return 'Afternoon';
+    return 'Evening';
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ── Threat Banner ──
-class _ThreatBanner extends StatelessWidget {
+// ── XP & Streak Row ──
+class _XpStreakRow extends StatelessWidget {
+  final dynamic user;
+  const _XpStreakRow({this.user});
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0D2137), Color(0xFF102028)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+    return GlassCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const StreakIndicator(streak: 7),
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryBg,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                      border: Border.all(
+                        color: AppColors.secondary.withOpacity(0.3),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Text(
+                      'LEVEL 5',
+                      style: AppTypography.overline.copyWith(
+                        color: AppColors.secondary,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      Text(
+                        '${user?.score ?? 0}',
+                        style: AppTypography.h3.copyWith(
+                          color: AppColors.warning,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'XP',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          XpBar(
+            currentXp: (user?.score ?? 0) % 500,
+            maxXp: 500,
+            level: 5,
+          ),
+        ],
       ),
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, curve: Curves.easeOut);
+  }
+}
+
+// ── Continue Learning ──
+class _ContinueLearningCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      bgColor: AppColors.primaryBg,
+      borderColor: AppColors.primary.withOpacity(0.3),
+      onTap: () => context.go('/learn'),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.primary.withOpacity(0.1),
-              boxShadow: AppTheme.neonGlow(AppTheme.primary, spread: 1),
+              color: AppColors.primary.withOpacity(0.15),
+              borderRadius: AppSpacing.borderRadiusSm,
             ),
-            child: const Icon(Icons.radar, color: AppTheme.primary, size: 22)
-                .animate(onPlay: (controller) => controller.repeat())
-                .rotate(duration: 3.seconds),
+            child: const Icon(
+              Icons.play_circle_fill,
+              color: AppColors.primary,
+              size: 32,
+            ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('THREAT LEVEL: LOW', style: TextStyle(color: AppTheme.secondary, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                const SizedBox(height: 4),
-                const Text('Tidak ada ancaman aktif terdeteksi. Sistem aman.', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                Text(
+                  'Continue Learning',
+                  style: AppTypography.h4.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Network Security - TCP/IP Protocol',
+                  style: AppTypography.bodySm.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
+          const Icon(
+            Icons.arrow_forward_ios,
+            color: AppColors.primary,
+            size: 16,
+          ),
         ],
       ),
-    );
+    ).animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1, curve: Curves.easeOut);
   }
 }
 
-// ── Feature Card with depth effect ──
-class _FeatureCard extends StatefulWidget {
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-  final int index;
-
-  const _FeatureCard({required this.icon, required this.label, required this.subtitle, required this.color, required this.onTap, required this.index});
-
-  @override
-  State<_FeatureCard> createState() => _FeatureCardState();
-}
-
-class _FeatureCardState extends State<_FeatureCard> {
-  bool _pressed = false;
-
+// ── Start Learning (for new users) ──
+class _StartLearningCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        transform: Matrix4.identity()..scale(_pressed ? 0.95 : 1.0),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [widget.color.withOpacity(_pressed ? 0.2 : 0.12), AppTheme.surface],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: _pressed ? widget.color : widget.color.withOpacity(0.3),
-            width: _pressed ? 1.5 : 1,
-          ),
-          boxShadow: _pressed ? AppTheme.neonGlow(widget.color, spread: 2) : [
-            BoxShadow(color: widget.color.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4)),
-          ],
-        ),
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: widget.color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(widget.icon, color: widget.color, size: 26),
+    return GlassCard(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      bgColor: AppColors.primaryBg,
+      borderColor: AppColors.primary.withOpacity(0.3),
+      onTap: () => context.go('/learn'),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.15),
+              borderRadius: AppSpacing.borderRadiusSm,
             ),
-            const Spacer(),
-            Text(widget.label, style: GoogleFonts.rajdhani(color: AppTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
-            Text(widget.subtitle, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-          ],
-        ),
-      )
-          .animate(delay: Duration(milliseconds: 150 + widget.index * 80))
-          .fadeIn(duration: 400.ms)
-          .slideY(begin: 0.2, duration: 400.ms, curve: Curves.easeOut),
-    );
+            child: const Icon(
+              Icons.school,
+              color: AppColors.primary,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Start Your Journey',
+                  style: AppTypography.h4.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Begin with Network Security or Cryptography',
+                  style: AppTypography.bodySm.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.arrow_forward_ios,
+            color: AppColors.primary,
+            size: 16,
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1, curve: Curves.easeOut);
   }
 }
 
-// ── Threat Feed ──
-class _ThreatFeedSection extends StatelessWidget {
-  final List<Map<String, dynamic>> _feeds = const [
-    {'icon': Icons.warning_amber, 'color': Color(0xFFFFD60A), 'title': 'Phishing Campaign Baru', 'desc': 'Serangan phishing menargetkan pengguna bank di Indonesia', 'time': '2 jam lalu'},
-    {'icon': Icons.bug_report, 'color': Color(0xFFFF453A), 'title': 'CVE-2024-3094 XZ Utils', 'desc': 'Kerentanan kritis ditemukan pada library kompresi Linux', 'time': '5 jam lalu'},
-    {'icon': Icons.shield, 'color': Color(0xFF00FF9C), 'title': 'Update Keamanan', 'desc': 'BSSN merilis panduan keamanan siber terbaru untuk UMKM', 'time': '1 hari lalu'},
-  ];
+// ── Today's Mission ──
+class _TodaysMission extends StatelessWidget {
+  const _TodaysMission();
 
   @override
   Widget build(BuildContext context) {
+    final missions = [
+      _Mission('Complete one lesson', Icons.menu_book, AppColors.primary, false),
+      _Mission('Solve a CTF challenge', Icons.flag_outlined, AppColors.secondary, true),
+      _Mission('Read today\'s security tip', Icons.lightbulb_outline, AppColors.warning, false),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text('THREAT FEED', style: GoogleFonts.orbitron(color: AppTheme.textSecondary, fontSize: 11, letterSpacing: 3)),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppTheme.accent.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.accent, width: 0.5),
-              ),
-              child: GestureDetector(
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Semua threat feed akan segera hadir!'))),
-                child: const Text('PILIHAN', style: TextStyle(color: AppTheme.accent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ...List.generate(_feeds.length, (i) {
-          final feed = _feeds[i];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: Row(
-                children: [
-                  Icon(feed['icon'] as IconData, color: feed['color'] as Color, size: 22),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(feed['title'] as String, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
-                        Text(feed['desc'] as String, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(feed['time'] as String, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10)),
-                ],
-              ),
-            ).animate(delay: Duration(milliseconds: 200 + i * 100)).fadeIn().slideX(begin: 0.1),
-          );
-        }),
+        SectionHeader(title: "Today's Mission"),
+        const SizedBox(height: AppSpacing.lg),
+        ...missions.asMap().entries.map((e) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: _MissionTile(mission: e.value, index: e.key),
+            )),
       ],
     );
   }
 }
 
-// ── Insight Preview ──
-class _InsightPreviewSection extends StatelessWidget {
-  final List<SecurityInsightModel> _previewInsights = SecurityInsightData.insights.take(3).toList();
+class _Mission {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool completed;
+
+  const _Mission(this.label, this.icon, this.color, this.completed);
+}
+
+class _MissionTile extends StatelessWidget {
+  final _Mission mission;
+  final int index;
+
+  const _MissionTile({required this.mission, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: AppSpacing.cardPadding,
+      onTap: () {},
+      child: Row(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: mission.completed
+                  ? AppColors.success
+                  : Colors.transparent,
+              border: Border.all(
+                color: mission.completed
+                    ? AppColors.success
+                    : AppColors.border,
+                width: 2,
+              ),
+            ),
+            child: mission.completed
+                ? const Icon(Icons.check, color: Colors.white, size: 14)
+                : null,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Icon(mission.icon, color: mission.color, size: 20),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              mission.label,
+              style: AppTypography.body.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(
+          delay: Duration(milliseconds: 300 + index * 80),
+          duration: 300.ms,
+        );
+  }
+}
+
+// ── Recent Activity ──
+class _RecentActivity extends StatelessWidget {
+  const _RecentActivity();
+
+  @override
+  Widget build(BuildContext context) {
+    final activities = [
+      _Activity(Icons.menu_book, AppColors.primary, 'Completed TCP/IP lesson', '2 hours ago'),
+      _Activity(Icons.flag, AppColors.secondary, 'Solved Crypto Challenge 01', '1 day ago'),
+      _Activity(Icons.build, AppColors.warning, 'Used Password Strength Tool', '2 days ago'),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Recent Activity',
+          actionLabel: 'View all',
+          onActionTap: () {},
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        ...activities.map((a) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: GlassCard(
+                padding: AppSpacing.cardPaddingCompact,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: a.color.withOpacity(0.1),
+                        borderRadius: AppSpacing.borderRadiusSm,
+                      ),
+                      child: Icon(a.icon, color: a.color, size: 18),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            a.title,
+                            style: AppTypography.body.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            a.time,
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )),
+      ],
+    );
+  }
+}
+
+class _Activity {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String time;
+
+  const _Activity(this.icon, this.color, this.title, this.time);
+}
+
+// ── Recommended Tool ──
+class _RecommendedTool extends StatelessWidget {
+  const _RecommendedTool();
+
+  @override
+  Widget build(BuildContext context) {
+    final tool = MockToolData.popular.first;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: 'Recommended Tool'),
+        const SizedBox(height: AppSpacing.lg),
+        GlassCard(
+          padding: AppSpacing.cardPadding,
+          bgColor: AppColors.secondaryBg,
+          borderColor: AppColors.secondary.withOpacity(0.3),
+          onTap: () => context.go('/toolkit'),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withOpacity(0.15),
+                  borderRadius: AppSpacing.borderRadiusSm,
+                ),
+                child: Icon(tool.icon, color: tool.color, size: 28),
+              ),
+              const SizedBox(width: AppSpacing.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tool.name,
+                      style: AppTypography.h4.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      tool.description,
+                      style: AppTypography.bodySm.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: AppColors.secondary,
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Security Tip ──
+class _SecurityTip extends StatelessWidget {
+  const _SecurityTip();
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text('PANDUAN DARURAT', style: GoogleFonts.orbitron(color: AppTheme.textSecondary, fontSize: 11, letterSpacing: 3)),
-            const Spacer(),
-            GestureDetector(
-              onTap: () => context.push(AppConstants.routeInsights),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        SectionHeader(title: "Today's Security Tip"),
+        const SizedBox(height: AppSpacing.lg),
+        GlassCard(
+          padding: AppSpacing.cardPadding,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                  color: AppColors.warningBg,
+                  borderRadius: AppSpacing.borderRadiusSm,
                 ),
-                child: const Row(children: [
-                  Text('Lihat semua', style: TextStyle(color: AppTheme.primary, fontSize: 11, fontWeight: FontWeight.w600)),
-                  SizedBox(width: 4),
-                  Icon(Icons.arrow_outward, color: AppTheme.primary, size: 14),
-                ]),
+                child: const Icon(
+                  Icons.lightbulb,
+                  color: AppColors.warning,
+                  size: 20,
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const Text('Buat user yang panik karena akun diretas, HP hilang, atau kena phishing.', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, height: 1.45)),
-        const SizedBox(height: 12),
-        ..._previewInsights.asMap().entries.map((entry) {
-          final insight = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: GestureDetector(
-              onTap: () => context.push('${AppConstants.routeInsights}?q=${Uri.encodeComponent(insight.title)}'),
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppTheme.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: insight.color.withOpacity(0.25)),
-                  boxShadow: [
-                    BoxShadow(color: insight.color.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3)),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Enable 2FA everywhere',
+                      style: AppTypography.body.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Two-factor authentication adds an extra layer of security beyond just a password. Use authenticator apps instead of SMS when possible.',
+                      style: AppTypography.bodySm.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
                   ],
                 ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Cyber News ──
+class _CyberNews extends StatelessWidget {
+  const _CyberNews();
+
+  @override
+  Widget build(BuildContext context) {
+    final news = MockNewsData.news.take(3).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Cyber News',
+          actionLabel: 'More',
+          onActionTap: () {},
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        ...news.map((n) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: GlassCard(
+                padding: AppSpacing.cardPaddingCompact,
+                onTap: () {},
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: insight.color.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
+                        color: n.color.withOpacity(0.1),
+                        borderRadius: AppSpacing.borderRadiusSm,
                       ),
-                      child: Icon(insight.icon, color: insight.color, size: 20),
+                      child: Icon(n.icon, color: n.color, size: 16),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(insight.title, style: GoogleFonts.rajdhani(color: AppTheme.textPrimary, fontSize: 15, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 3),
-                          Text(insight.summary, maxLines: 2, overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, height: 1.35)),
+                          Text(
+                            n.title,
+                            style: AppTypography.body.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Row(
+                            children: [
+                              Text(
+                                n.source,
+                                style: AppTypography.overline.copyWith(
+                                  color: n.color,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Text(
+                                n.timeAgo,
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
                   ],
                 ),
               ),
-            ).animate(delay: Duration(milliseconds: 100 + entry.key * 90)).fadeIn(),
-          );
-        }),
+            )),
       ],
     );
   }

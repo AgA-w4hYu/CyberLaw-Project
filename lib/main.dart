@@ -24,14 +24,11 @@ void main() async {
     statusBarIconBrightness: Brightness.light,
   ));
 
-  // Init Hive
+  // Init Hive (keep for backwards compatibility with existing data)
   await Hive.initFlutter();
   Hive.registerAdapter(UserModelAdapter());
-
-  // Open boxes
   await Hive.openBox(AppConstants.hiveBoxUsers);
   await Hive.openBox(AppConstants.hiveBoxSession);
-  await Hive.openBox(AppConstants.hiveBoxReports);
   await Hive.openBox(AppConstants.hiveBoxOnboarding);
 
   // Create auth provider and restore session
@@ -43,18 +40,18 @@ void main() async {
       providers: [
         ChangeNotifierProvider.value(value: authProvider),
       ],
-      child: const CyberLawGuardianApp(),
+      child: const CyberLawApp(),
     ),
   );
 }
 
-class CyberLawGuardianApp extends StatelessWidget {
-  const CyberLawGuardianApp({super.key});
+class CyberLawApp extends StatelessWidget {
+  const CyberLawApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'CyberLaw Guardian',
+      title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       routerConfig: appRouter,

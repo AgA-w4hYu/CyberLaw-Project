@@ -3,11 +3,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_constants.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/cyber_text_field.dart';
-import '../../widgets/neon_button.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -17,7 +16,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
@@ -34,141 +32,266 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
+    final name = _nameCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+    final password = _passCtrl.text;
+    final confirm = _confirmCtrl.text;
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      _showError('Please fill in all fields');
+      return;
+    }
+    if (!email.contains('@')) {
+      _showError('Invalid email format');
+      return;
+    }
+    if (password.length < 8) {
+      _showError('Password must be at least 8 characters');
+      return;
+    }
+    if (password != confirm) {
+      _showError('Passwords do not match');
+      return;
+    }
+
     final auth = context.read<AuthProvider>();
-    final success = await auth.register(
-      _nameCtrl.text.trim(),
-      _emailCtrl.text.trim(),
-      _passCtrl.text,
-    );
+    final success = await auth.register(name, email, password);
     if (!mounted) return;
     if (success) {
-      context.go(AppConstants.routeHome);
+      context.go('/home');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.errorMessage ?? 'Registrasi gagal'), backgroundColor: AppTheme.error),
-      );
+      _showError(auth.errorMessage ?? 'Registration failed');
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppTheme.textPrimary),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text('DAFTAR AKUN'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
       body: Container(
         decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topCenter,
-            radius: 1.5,
-            colors: [Color(0xFF0D2137), AppTheme.background],
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF0F172A),
+              AppColors.bgPrimary,
+              AppColors.bgSecondary,
+            ],
           ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Text(
-                    'Bergabunglah dengan komunitas\nwhite-hat terpercaya',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14, height: 1.5),
-                  ).animate().fadeIn(),
-                  const SizedBox(height: 32),
-
-                  CyberTextField(
-                    label: 'Nama Lengkap',
-                    controller: _nameCtrl,
-                    prefixIcon: const Icon(Icons.person_outline, color: AppTheme.textSecondary, size: 20),
-                    validator: (v) => (v?.isEmpty ?? true) ? 'Nama wajib diisi' : null,
-                  ).animate().slideY(begin: 0.3, duration: 400.ms, curve: Curves.easeOut),
-                  const SizedBox(height: 16),
-
-                  CyberTextField(
-                    label: 'Email',
-                    controller: _emailCtrl,
-                    keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const Icon(Icons.alternate_email, color: AppTheme.textSecondary, size: 20),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Email wajib diisi';
-                      if (!v.contains('@')) return 'Format email tidak valid';
-                      return null;
-                    },
-                  ).animate().slideY(begin: 0.3, delay: 100.ms, duration: 400.ms, curve: Curves.easeOut),
-                  const SizedBox(height: 16),
-
-                  CyberTextField(
-                    label: 'Password',
-                    controller: _passCtrl,
-                    obscureText: !_showPass,
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary, size: 20),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _showPass ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        color: AppTheme.textSecondary,
-                        size: 20,
-                      ),
-                      onPressed: () => setState(() => _showPass = !_showPass),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.page,
+              vertical: AppSpacing.xl,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Back button
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                  onPressed: () => context.pop(),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppSpacing.borderRadiusSm,
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Password wajib diisi';
-                      if (v.length < 8) return 'Password minimal 8 karakter';
-                      return null;
-                    },
-                  ).animate().slideY(begin: 0.3, delay: 200.ms, duration: 400.ms, curve: Curves.easeOut),
-                  const SizedBox(height: 16),
+                  ),
+                ).animate().fadeIn(),
 
-                  CyberTextField(
-                    label: 'Konfirmasi Password',
-                    controller: _confirmCtrl,
-                    obscureText: !_showPass,
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary, size: 20),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Konfirmasi password wajib diisi';
-                      if (v != _passCtrl.text) return 'Password tidak cocok';
-                      return null;
-                    },
-                  ).animate().slideY(begin: 0.3, delay: 300.ms, duration: 400.ms, curve: Curves.easeOut),
-                  const SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.xxl),
 
-                  Consumer<AuthProvider>(
-                    builder: (_, auth, __) => NeonButton(
-                      label: 'DAFTAR SEKARANG',
-                      width: double.infinity,
-                      isLoading: auth.status == AuthStatus.loading,
-                      onPressed: _register,
+                Text(
+                  'Create\nAccount',
+                  style: AppTypography.h1.copyWith(
+                    color: AppColors.textPrimary,
+                    height: 1.2,
+                  ),
+                ).animate().fadeIn(delay: 100.ms),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Join the cybersecurity community',
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ).animate().fadeIn(delay: 150.ms),
+
+                const SizedBox(height: AppSpacing.section),
+
+                // Name
+                _buildField(
+                  label: 'Full Name',
+                  controller: _nameCtrl,
+                  icon: Icons.person_outline,
+                  delay: 200,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Email
+                _buildField(
+                  label: 'Email',
+                  controller: _emailCtrl,
+                  icon: Icons.alternate_email,
+                  delay: 250,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Password
+                _buildField(
+                  label: 'Password',
+                  controller: _passCtrl,
+                  icon: Icons.lock_outline,
+                  obscureText: !_showPass,
+                  delay: 300,
+                  suffix: IconButton(
+                    icon: Icon(
+                      _showPass
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: AppColors.textTertiary,
+                      size: 20,
                     ),
-                  ).animate().fadeIn(delay: 400.ms),
+                    onPressed: () => setState(() => _showPass = !_showPass),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
 
-                  const SizedBox(height: 24),
-                  Row(
+                // Confirm
+                _buildField(
+                  label: 'Confirm Password',
+                  controller: _confirmCtrl,
+                  icon: Icons.lock_outline,
+                  obscureText: !_showPass,
+                  delay: 350,
+                ),
+
+                const SizedBox(height: AppSpacing.section),
+
+                // Register button
+                Consumer<AuthProvider>(
+                  builder: (_, auth, __) => SizedBox(
+                    width: double.infinity,
+                    height: AppSpacing.buttonHeight,
+                    child: ElevatedButton(
+                      onPressed:
+                          auth.status == AuthStatus.loading ? null : _register,
+                      child: auth.status == AuthStatus.loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.textInverse,
+                              ),
+                            )
+                          : Text(
+                              'CREATE ACCOUNT',
+                              style: AppTypography.button.copyWith(
+                                color: AppColors.textInverse,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 400.ms),
+
+                const SizedBox(height: AppSpacing.xxl),
+
+                Center(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Sudah punya akun? ', style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+                      Text(
+                        'Already have an account? ',
+                        style: AppTypography.body.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                       GestureDetector(
                         onTap: () => context.pop(),
-                        child: const Text(
-                          'Masuk',
-                          style: TextStyle(color: AppTheme.primary, fontSize: 14, fontWeight: FontWeight.bold),
+                        child: Text(
+                          'Log In',
+                          style: AppTypography.button.copyWith(
+                            color: AppColors.primary,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ).animate().fadeIn(delay: 500.ms),
+              ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildField({
+    required String label,
+    required TextEditingController controller,
+    IconData? icon,
+    bool obscureText = false,
+    int delay = 0,
+    Widget? suffix,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: AppTypography.label.copyWith(
+            color: AppColors.textSecondary,
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TextFormField(
+          controller: controller,
+          obscureText: obscureText,
+          style: AppTypography.body.copyWith(color: AppColors.textPrimary),
+          decoration: InputDecoration(
+            prefixIcon: icon != null
+                ? Icon(icon, color: AppColors.textTertiary, size: 20)
+                : null,
+            suffixIcon: suffix,
+            filled: true,
+            fillColor: AppColors.surface,
+            border: OutlineInputBorder(
+              borderRadius: AppSpacing.borderRadiusSm,
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: AppSpacing.borderRadiusSm,
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: AppSpacing.borderRadiusSm,
+              borderSide:
+                  const BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+          ),
+        ),
+      ],
+    ).animate().slideY(
+          begin: 0.3,
+          delay: Duration(milliseconds: delay),
+          duration: 400.ms,
+          curve: Curves.easeOut,
+        );
   }
 }

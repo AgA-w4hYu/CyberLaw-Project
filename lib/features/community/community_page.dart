@@ -1,143 +1,465 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
+import '../../models/community_post_model.dart';
+import '../../widgets/avatar_widget.dart';
+import '../../widgets/glass_card.dart';
+import '../../widgets/section_header.dart';
 
 class CommunityPage extends StatelessWidget {
   const CommunityPage({super.key});
-
-  static const _posts = [
-    _Post(
-      username: 'xNoobHunter',
-      avatar: 'XN',
-      avatarColor: Color(0xFF00F0FF),
-      time: '2 jam lalu',
-      title: 'Tips SQL Injection Testing – Untuk Bug Bounty Hunter',
-      body: 'Halo teman-teman! Mau berbagi pengalaman saya saat hunting bug di program bug bounty publik. SQLi masih jadi temuan favorit, terutama di endpoint yang tidak sanitasi input dengan benar...',
-      tags: ['Bug Bounty', 'SQLi', 'Tips'],
-      likes: 142,
-      comments: 34,
-    ),
-    _Post(
-      username: 'CyberLawyer_ID',
-      avatar: 'CL',
-      avatarColor: Color(0xFF00FF9C),
-      time: '5 jam lalu',
-      title: 'Penjelasan Pasal 30 UU ITE: Batas Ethical Hacking',
-      body: 'Banyak yang tanya tentang batas legal ethical hacking di Indonesia. Simpelnya: kamu butuh izin tertulis dari pemilik sistem. Tanpa itu, apapun alasannya, bisa kena Pasal 30...',
-      tags: ['UU ITE', 'Legal', 'Ethical Hacking'],
-      likes: 287,
-      comments: 61,
-    ),
-    _Post(
-      username: 'r3versed_m1nd',
-      avatar: 'RM',
-      avatarColor: Color(0xFFFF006E),
-      time: '1 hari lalu',
-      title: 'Write-up: Caesar Cipher CTF di Cyber Lab!',
-      body: 'Baru selesai solve crypto-01 di app ini. Challenge-nya seru banget! Spoiler dikit: key shift-nya 3, jadi tinggal ROT-3 aja. Tapi ada yang bisa solve crypto-02 juga?',
-      tags: ['CTF', 'Write-up', 'Crypto'],
-      likes: 98,
-      comments: 22,
-    ),
-    _Post(
-      username: 'sec0ps_gurl',
-      avatar: 'SG',
-      avatarColor: Color(0xFFFFD60A),
-      time: '2 hari lalu',
-      title: 'REVIEW: Buku "The Art of Invisibility" by Kevin Mitnick',
-      body: 'Baru selesai baca buku ini. Kevin Mitnick menjelaskan dengan lugas bagaimana privasi digital kita terus terancam setiap hari. Wajib baca untuk semua yang peduli privasi online...',
-      tags: ['Book', 'Privasi', 'Rekomendasi'],
-      likes: 203,
-      comments: 45,
-    ),
-    _Post(
-      username: '0xH4ck3r_Pro',
-      avatar: '0X',
-      avatarColor: Color(0xFFAB00FF),
-      time: '3 hari lalu',
-      title: 'Setup Lab Home Hacking dengan VirtualBox + Kali Linux',
-      body: 'Tutorial lengkap setup home lab untuk belajar ethical hacking dengan aman. Pakai VirtualBox + Kali Linux + DVWA sebagai target. Aman, legal, dan gratis...',
-      tags: ['Tutorial', 'Kali Linux', 'Lab Setup'],
-      likes: 421,
-      comments: 89,
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('KOMUNITAS'),
-        actions: [
-          TextButton.icon(
-            icon: const Icon(Icons.group_add, color: AppTheme.primary, size: 18),
-            label: const Text('JOIN', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold)),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil bergabung dengan Komunitas!'))),
+        title: Text(
+          'Community',
+          style: AppTypography.h3.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
           ),
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: AppTheme.secondary),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitur buat post segera hadir'))),
-          ),
-        ],
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.page),
         children: [
-          // Filter chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: ['Semua', 'CTF', 'Bug Bounty', 'Tutorial', 'Legal', 'Tools'].map((tag) {
-                final isSelected = tag == 'Semua';
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(tag),
-                    selected: isSelected,
-                    onSelected: (_) {},
-                    backgroundColor: AppTheme.surfaceVariant,
-                    selectedColor: AppTheme.primary.withOpacity(0.2),
-                    checkmarkColor: AppTheme.primary,
-                    labelStyle: TextStyle(color: isSelected ? AppTheme.primary : AppTheme.textSecondary, fontSize: 12),
-                    side: BorderSide(color: isSelected ? AppTheme.primary : AppTheme.border),
-                    padding: EdgeInsets.zero,
-                  ),
-                );
-              }).toList(),
+          // ── Trending Discussions ──
+          SectionHeader(title: 'Trending'),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            height: 160,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: MockCommunityData.trending.length,
+              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+              itemBuilder: (_, i) => _TrendingCard(post: MockCommunityData.trending[i]),
             ),
-          ).animate().fadeIn(),
-          const SizedBox(height: 16),
-          ..._posts.asMap().entries.map((e) => _PostCard(post: e.value, index: e.key)),
+          ),
+
+          const SizedBox(height: AppSpacing.xxl),
+
+          // ── Weekly Challenge ──
+          _WeeklyChallengeCard(),
+          const SizedBox(height: AppSpacing.xxl),
+
+          // ── Mentor Picks ──
+          SectionHeader(
+            title: 'Mentor Picks',
+            actionLabel: 'View all',
+            onActionTap: () {},
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            height: 140,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: MockCommunityData.mentorPicks.length,
+              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+              itemBuilder: (_, i) => _MentorPickCard(post: MockCommunityData.mentorPicks[i]),
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.xxl),
+
+          // ── Find CTF Team ──
+          _FindTeamCard(),
+          const SizedBox(height: AppSpacing.xxl),
+
+          // ── Leaderboard Preview ──
+          _LeaderboardPreview(),
+          const SizedBox(height: AppSpacing.xxl),
+
+          // ── Popular Posts ──
+          SectionHeader(
+            title: 'Popular Posts',
+            actionLabel: 'View all',
+            onActionTap: () {},
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Filter chips
+          SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _filterChip('All', true),
+                _filterChip('CTF', false),
+                _filterChip('Tutorial', false),
+                _filterChip('Bug Bounty', false),
+                _filterChip('Legal', false),
+                _filterChip('Tools', false),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Posts
+          ...MockCommunityData.posts.map((p) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: _PostCard(post: p),
+              )),
+          const SizedBox(height: AppSpacing.section),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterChip(String label, bool selected) {
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.sm),
+      child: GestureDetector(
+        onTap: () {},
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primaryBg : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            border: Border.all(
+              color: selected
+                  ? AppColors.primary.withOpacity(0.5)
+                  : AppColors.border,
+              width: 0.5,
+            ),
+          ),
+          child: Text(
+            label,
+            style: AppTypography.buttonSmall.copyWith(
+              color: selected ? AppColors.primary : AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Trending Card ──
+class _TrendingCard extends StatelessWidget {
+  final CommunityPost post;
+
+  const _TrendingCard({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        width: 240,
+        padding: AppSpacing.cardPadding,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              post.avatarColor.withOpacity(0.12),
+              AppColors.surface,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: AppSpacing.borderRadiusMd,
+          border: Border.all(
+            color: post.avatarColor.withOpacity(0.2),
+            width: 0.5,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                AvatarWidget(
+                  initials: post.avatarInitials,
+                  size: 28,
+                  color: post.avatarColor,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  post.username,
+                  style: AppTypography.caption.copyWith(
+                    color: post.avatarColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.local_fire_department,
+                    color: AppColors.warning, size: 16),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              post.title,
+              style: AppTypography.body.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Icon(Icons.favorite, color: AppColors.error, size: 14),
+                const SizedBox(width: 4),
+                Text('${post.likes}', style: AppTypography.caption.copyWith(color: AppColors.textTertiary)),
+                const SizedBox(width: AppSpacing.md),
+                Icon(Icons.chat_bubble_outline, color: AppColors.textTertiary, size: 14),
+                const SizedBox(width: 4),
+                Text('${post.comments}', style: AppTypography.caption.copyWith(color: AppColors.textTertiary)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Weekly Challenge ──
+class _WeeklyChallengeCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: AppSpacing.cardPadding,
+      bgColor: AppColors.warningBg,
+      borderColor: AppColors.warning.withOpacity(0.3),
+      onTap: () {},
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withOpacity(0.15),
+              borderRadius: AppSpacing.borderRadiusSm,
+            ),
+            child: const Icon(
+              Icons.emoji_events,
+              color: AppColors.warning,
+              size: 32,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Weekly Challenge',
+                  style: AppTypography.h4.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Crack the Vigenère cipher and win 500 XP!',
+                  style: AppTypography.bodySm.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.arrow_forward_ios,
+            color: AppColors.warning,
+            size: 16,
+          ),
         ],
       ),
     );
   }
 }
 
-class _Post {
-  final String username;
-  final String avatar;
-  final Color avatarColor;
-  final String time;
-  final String title;
-  final String body;
-  final List<String> tags;
-  final int likes;
-  final int comments;
+// ── Mentor Pick Card ──
+class _MentorPickCard extends StatelessWidget {
+  final CommunityPost post;
 
-  const _Post({
-    required this.username, required this.avatar, required this.avatarColor,
-    required this.time, required this.title, required this.body,
-    required this.tags, required this.likes, required this.comments,
-  });
+  const _MentorPickCard({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        width: 200,
+        padding: AppSpacing.cardPaddingCompact,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: AppSpacing.borderRadiusMd,
+          border: Border(
+            top: BorderSide(color: AppColors.secondary, width: 2),
+            left: BorderSide(color: AppColors.borderSoft),
+            right: BorderSide(color: AppColors.borderSoft),
+            bottom: BorderSide(color: AppColors.borderSoft),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                AvatarWidget(
+                  initials: post.avatarInitials,
+                  size: 24,
+                  color: post.avatarColor,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    post.username,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.secondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              post.title,
+              style: AppTypography.bodySm.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '${post.likes} likes',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
+// ── Find Team Card ──
+class _FindTeamCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: AppSpacing.cardPadding,
+      onTap: () {},
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.primaryBg,
+              borderRadius: AppSpacing.borderRadiusSm,
+            ),
+            child: const Icon(
+              Icons.group_add,
+              color: AppColors.primary,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Find CTF Team',
+                  style: AppTypography.h4.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Connect with teammates for upcoming competitions',
+                  style: AppTypography.bodySm.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.arrow_forward_ios,
+            color: AppColors.primary,
+            size: 16,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Leaderboard Preview ──
+class _LeaderboardPreview extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Leaderboard',
+          actionLabel: 'View full',
+          actionIcon: Icons.arrow_forward,
+          onActionTap: () => context.push('/community/leaderboard'),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        GlassCard(
+          padding: AppSpacing.cardPadding,
+          child: Column(
+            children: [
+              _leaderRow('🥇', 'kr4k3n_m4st3r', '4,250 XP', const Color(0xFFFFD60A)),
+              const Divider(color: AppColors.border, height: AppSpacing.lg),
+              _leaderRow('🥈', 'sec0ops_phantom', '3,875 XP', const Color(0xFF3B82F6)),
+              const Divider(color: AppColors.border, height: AppSpacing.lg),
+              _leaderRow('🥉', 'null_byte_ninja', '3,610 XP', const Color(0xFF10B981)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _leaderRow(String emoji, String name, String score, Color color) {
+    return Row(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 20)),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(
+            name,
+            style: AppTypography.body.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Text(
+          score,
+          style: AppTypography.buttonSmall.copyWith(
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Post Card ──
 class _PostCard extends StatefulWidget {
-  final _Post post;
-  final int index;
-  const _PostCard({required this.post, required this.index});
+  final CommunityPost post;
+
+  const _PostCard({required this.post});
 
   @override
   State<_PostCard> createState() => _PostCardState();
@@ -149,133 +471,148 @@ class _PostCardState extends State<_PostCard> {
   @override
   Widget build(BuildContext context) {
     final p = widget.post;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Author row
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: p.avatarColor.withOpacity(0.2),
-                  radius: 18,
-                  child: Text(p.avatar, style: TextStyle(color: p.avatarColor, fontSize: 12, fontWeight: FontWeight.bold)),
+
+    return GlassCard(
+      padding: AppSpacing.cardPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Author row
+          Row(
+            children: [
+              AvatarWidget(
+                initials: p.avatarInitials,
+                size: 32,
+                color: p.avatarColor,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.username,
+                      style: AppTypography.body.copyWith(
+                        color: p.avatarColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      p.timeAgo,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(p.username, style: GoogleFonts.rajdhani(color: p.avatarColor, fontSize: 14, fontWeight: FontWeight.bold)),
-                      Text(p.time, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.more_vert, color: AppTheme.textSecondary, size: 18),
-              ],
+              ),
+              Icon(Icons.more_horiz, color: AppColors.textTertiary, size: 20),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Title
+          Text(
+            p.title,
+            style: AppTypography.h4.copyWith(
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 12),
-            Text(p.title, style: GoogleFonts.rajdhani(color: AppTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Text(p.body, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13, height: 1.5), maxLines: 3, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 10),
-            // Tags
-            Wrap(
-              spacing: 6,
-              children: p.tags.map((tag) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
-                ),
-                child: Text('#$tag', style: const TextStyle(color: AppTheme.primary, fontSize: 10)),
-              )).toList(),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+
+          // Body
+          Text(
+            p.body,
+            style: AppTypography.bodySm.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
             ),
-            const SizedBox(height: 12),
-            const Divider(color: AppTheme.border, height: 1),
-            const SizedBox(height: 10),
-            // Actions
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => setState(() => _liked = !_liked),
-                  child: Row(
-                    children: [
-                      Icon(_liked ? Icons.favorite : Icons.favorite_border, color: _liked ? AppTheme.accent : AppTheme.textSecondary, size: 18),
-                      const SizedBox(width: 4),
-                      Text('${p.likes + (_liked ? 1 : 0)}', style: TextStyle(color: _liked ? AppTheme.accent : AppTheme.textSecondary, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      backgroundColor: AppTheme.surface,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                      builder: (context) => Padding(
-                        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          height: 300,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Komentar (${p.comments})', style: const TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 16),
-                              const Expanded(
-                                child: Center(child: Text('Belum ada komentar yang dapat dimuat.', style: TextStyle(color: AppTheme.textSecondary))),
-                              ),
-                              TextField(
-                                style: const TextStyle(color: AppTheme.textPrimary),
-                                decoration: InputDecoration(
-                                  hintText: 'Tulis komentar...',
-                                  hintStyle: const TextStyle(color: AppTheme.textSecondary),
-                                  suffixIcon: IconButton(
-                                    icon: const Icon(Icons.send, color: AppTheme.primary),
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Komentar terkirim!')));
-                                    },
-                                  ),
-                                  filled: true,
-                                  fillColor: AppTheme.surfaceVariant,
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                ),
-                              ),
-                            ],
-                          ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Tags
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: p.tags
+                .map((t) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBg,
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.radiusSm),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.2),
+                          width: 0.5,
                         ),
                       ),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      const Icon(Icons.chat_bubble_outline, color: AppTheme.textSecondary, size: 16),
-                      const SizedBox(width: 4),
-                      Text('${p.comments}', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-                    ],
-                  ),
+                      child: Text(
+                        '#$t',
+                        style: AppTypography.overline.copyWith(
+                          color: AppColors.primary,
+                          fontSize: 9,
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+          const Divider(color: AppColors.border, height: 1),
+          const SizedBox(height: AppSpacing.md),
+
+          // Actions
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => setState(() => _liked = !_liked),
+                child: Row(
+                  children: [
+                    Icon(
+                      _liked ? Icons.favorite : Icons.favorite_border,
+                      color: _liked ? AppColors.error : AppColors.textTertiary,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${p.likes + (_liked ? 1 : 0)}',
+                      style: AppTypography.caption.copyWith(
+                        color:
+                            _liked ? AppColors.error : AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                const Icon(Icons.share_outlined, color: AppTheme.textSecondary, size: 16),
-              ],
-            ),
-          ],
-        ),
-      ).animate(delay: Duration(milliseconds: 80 * widget.index)).fadeIn().slideY(begin: 0.1),
+              ),
+              const SizedBox(width: AppSpacing.xl),
+              GestureDetector(
+                onTap: () {},
+                child: Row(
+                  children: [
+                    const Icon(Icons.chat_bubble_outline,
+                        color: AppColors.textTertiary, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${p.comments}',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              const Icon(Icons.share_outlined,
+                  color: AppColors.textTertiary, size: 16),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
